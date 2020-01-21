@@ -5,14 +5,14 @@ void setup() {
   Serial.begin(115200);
   
   for (int i = 0; i < NUMBER_OF_PINS; i++) {
-    pinMode(buttonPins[i], INPUT);
+    pinMode(buttonPins[i], INPUT_PULLUP);
   }
 
 }
 
 void loop() {
   for (int i = 0; i < NUMBER_OF_PINS; i++) {
-    if (digitalRead(buttonPins[i]) == LOW) {
+    if (digitalRead(buttonPins[i]) == HIGH) {
       continue;
     }
 
