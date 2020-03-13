@@ -1,8 +1,8 @@
-#include <EasyButton.h>
+#include "DomoButton.h"
 
 #define NUMBER_OF_BUTTONS 10
 
-EasyButton buttons[NUMBER_OF_BUTTONS] = {
+DomoButton buttons[NUMBER_OF_BUTTONS] = {
   (22), (23), (24), (25), (26),
   (27), (28), (29), (30), (31),
 };
@@ -23,5 +23,9 @@ void setup() {
 void loop() {
   for (int i = 0; i < NUMBER_OF_BUTTONS; i++){
     buttons[i].read();
+
+    if (buttons[i].isPressed()){
+      Serial.println("still pressed");
+    }
   }
 }
