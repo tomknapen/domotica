@@ -18,6 +18,8 @@ char* MQTT_BUTTON_TOPIC = "button/"; // location/devicenumber/inputtype/
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 
+void(* resetFunc) (void) = 0; // declare reset function @ address 0
+
 int buttonPins[] = {
   A0, 1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, 
   2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 
@@ -32,12 +34,14 @@ int buttonPins[] = {
 Switch *buttons[NUMBER_OF_BUTTONS];
 
 void setup() {
-  Serial.begin(19200);
+  Serial.begin(115200);
 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
 
+  Serial.println("Setting up wifi");
+  
   setupWifi();
   setupMqtt();
   setupButtons();
@@ -58,7 +62,7 @@ void setupButtons(){
 
   Serial.print("Initialized ");
   Serial.print(NUMBER_OF_BUTTONS);
-  Serial.print("buttons");
+  Serial.println(" buttons");
 }
 
 void processButtons(){
@@ -74,34 +78,33 @@ void processButton(Switch* button, int pin) {
   button->poll();
 
   if (button->singleClick()){
-    Serial.print("clicked ");
-    Serial.println(pin);
-
-    char topicBuffer[25];
-    strcpy(topicBuffer, MQTT_CLIENT_NAME);
-    strcat(topicBuffer, MQTT_BUTTON_TOPIC);
-    strcat(topicBuffer, pin);
-
-    mqttClient.publish(topicBuffer, "single_click");
+    publishButton(pin, "single");
   }
   
   if (button->doubleClick()){
-    Serial.print("double clicked ");
-    Serial.println(pin);
+    publishButton(pin, "double");
   }
       
   if (button->longPress()){
-    Serial.print("held ");
-    Serial.println(pin);
+    publishButton(pin, "hold");
   }
 }
 
+void publishButton(int pin, char* state){
+    char topicBuffer[25];
+    sprintf(topicBuffer, "%s%s%d", MQTT_CLIENT_NAME, MQTT_BUTTON_TOPIC, pin);
 
-void(* resetFunc) (void) = 0; // declare reset function @ address 0
+    Serial.print("Sending MQTT message ");
+    Serial.print(state);
+    Serial.print(" to topic ");
+    Serial.println(topicBuffer);
+    
+    mqttClient.publish(topicBuffer, state);
+}
 
-void setupWifi() {
+void setupWifi() {  
   #if !defined(ESP_CH_SPI)
-    Serial3.begin(115200); // speed must match with BAUDRATE_COMMUNICATION setting in firmware config.h
+    Serial3.begin(9600); // speed must match with BAUDRATE_COMMUNICATION setting in firmware config.h
     WiFi.init(&Serial3);
   #endif
   
