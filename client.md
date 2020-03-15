@@ -47,3 +47,4 @@ Disconnect the arduino, and flip the dipswitches to exit flashing mode:
 To be able to use wifilink on the arduino, making use of the connection in the esp8266 chip.
 
 Use the instructions found here: https://github.com/jandrassy/arduino-library-wifilink. Make sure to downgrade Arduino to 2.4.1, see https://github.com/jandrassy/arduino-firmware-wifilink/issues/10.
+This can be done through board manager -> search for esp8266.
