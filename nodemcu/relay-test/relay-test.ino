@@ -55,7 +55,7 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
 
   int relayIndex = atoi(strtok(NULL, "/")) - 1;
 
-  if (relayIndex < 0 || relayIndex + 1 >= NUMBER_OF_RELAYS){
+  if (relayIndex < 0 || relayIndex >= NUMBER_OF_RELAYS){
     return;
   }
 
