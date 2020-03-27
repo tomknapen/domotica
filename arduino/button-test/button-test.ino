@@ -91,12 +91,12 @@ void processButton(Switch* button, int pin) {
 }
 
 void publishButton(int pin, char* state){
-    char topicBuffer[25];
-    sprintf(topicBuffer, "%s%s%d", MQTT_CLIENT_NAME, MQTT_BUTTON_TOPIC, pin);
+    char topicBuffer[30];
+    sprintf(topicBuffer, "cmnd/%s%s%d", MQTT_BUTTON_TOPIC, MQTT_CLIENT_NAME, pin);
 
-    Serial.print("Sending MQTT message ");
+    Serial.print("Sending MQTT message '");
     Serial.print(state);
-    Serial.print(" to topic ");
+    Serial.print("' to topic ");
     Serial.println(topicBuffer);
     
     mqttClient.publish(topicBuffer, state);
