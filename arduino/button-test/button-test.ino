@@ -12,7 +12,7 @@
   SoftwareSerial Serial3(15, 14); // RX, TX
 #endif
 
-char* MQTT_CLIENT_NAME = "downstairs/1/"; // location/devicenumber
+char* MQTT_CLIENT_NAME = "upstairs/1/"; // location/devicenumber
 char* MQTT_BUTTON_TOPIC = "button/"; // location/devicenumber/inputtype/
 
 WiFiClient wifiClient;
@@ -57,7 +57,7 @@ void loop() {
 
 void setupButtons(){
   for (int i = 0; i < NUMBER_OF_BUTTONS; i++){
-    buttons[i] = new Switch(buttonPins[i]);
+    buttons[i] = new Switch(buttonPins[i], INPUT_PULLUP, LOW, 50, 300, 500, 10);
   }
 
   Serial.print("Initialized ");
