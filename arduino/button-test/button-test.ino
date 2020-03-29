@@ -39,8 +39,6 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-
-  Serial.println("Setting up wifi");
   
   setupWifi();
   setupMqtt();
@@ -103,9 +101,13 @@ void publishButton(int pin, char* state){
 }
 
 void setupWifi() {  
+  Serial.println("Setting up wifi");
+  
   #if !defined(ESP_CH_SPI)
-    Serial3.begin(9600); // speed must match with BAUDRATE_COMMUNICATION setting in firmware config.h
+    Serial3.begin(115200); // speed must match with BAUDRATE_COMMUNICATION setting in firmware config.h
+    
     WiFi.init(&Serial3);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
   #endif
   
   if (WiFi.checkFirmwareVersion("1.1.0")) {
