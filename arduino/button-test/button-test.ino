@@ -12,8 +12,9 @@
   SoftwareSerial Serial3(15, 14); // RX, TX
 #endif
 
-char* MQTT_CLIENT_NAME = "upstairs/1/"; // location/devicenumber
-char* MQTT_BUTTON_TOPIC = "button/"; // location/devicenumber/inputtype/
+#include "downstairs_1.h"
+
+char* MQTT_BUTTON_TOPIC = "button/";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -21,12 +22,12 @@ PubSubClient mqttClient(wifiClient);
 void(* resetFunc) (void) = 0; // declare reset function @ address 0
 
 int buttonPins[] = {
-  A0, 1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, 
+  //  A0, 1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, // probably messes up some mqtt communication when pressed :/
   2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 
-  // 14, 15, needed for Serial3 connection to ESP8266, for wifi
+  // 14, 15, // needed for Serial3 connection to ESP8266, for wifi
   16, 17, 18, 19, 20, 21, 
   22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 
-  42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+  42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
 };
 
 #define NUMBER_OF_BUTTONS sizeof(buttonPins)/sizeof(int)
@@ -104,16 +105,22 @@ void setupWifi() {
   Serial.println("Setting up wifi");
   
   #if !defined(ESP_CH_SPI)
-    Serial3.begin(115200); // speed must match with BAUDRATE_COMMUNICATION setting in firmware config.h
-    
+    Serial3.begin(WIFI_BAUD); // speed must match with BAUDRATE_COMMUNICATION setting in firmware config.h
+
     WiFi.init(&Serial3);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
   #endif
   
+  connectToWifi();
+}
+
+void connectToWifi(){
+  Serial.println("connecting to wifi");
+  
   if (WiFi.checkFirmwareVersion("1.1.0")) {
     Serial.println("resetting ESP");
     WiFi.resetESP(); // to clear 'sockets' after sketch upload
-    delay(5000); // wait while WiFiLink firmware connects to WiFi
+    delay(3000); // wait while WiFiLink firmware connects to WiFi
   }
   
   if (WiFi.status() == WL_NO_WIFI_MODULE_COMM) {
@@ -122,27 +129,29 @@ void setupWifi() {
     resetFunc(); 
   }
   
-  do {
+  while ( WiFi.status() != WL_CONNECTED) {
     Serial.println("attempting to connect to wifi");
-
     delay(1000); // wait for connection
   }
-  while ( WiFi.status() != WL_CONNECTED);
 
   Serial.println("connected to wifi");
 }
 
 void setupMqtt(){
-  mqttClient.setServer(_MQTT_BROKER, _MQTT_PORT);
+  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
 
   Serial.println("initialized MQTT client");
 }
 
 void ensureMqttConnectionActive(){
+  if ( WiFi.status() != WL_CONNECTED){
+    connectToWifi();
+  }
+    
   while (!mqttClient.connected()){
     Serial.println("connecting to MQTT");
 
-    if(!mqttClient.connect(MQTT_CLIENT_NAME)){
+    if(!mqttClient.connect("MQTT_CLIENT_NAME")){
       Serial.print("failed, rc = ");
       Serial.print(mqttClient.state());
       Serial.println(", trying again in 5 seconds");
