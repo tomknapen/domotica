@@ -11,7 +11,7 @@ int relays[] = { D1, D2, D3, D4, D5, D6, D7 };
 
 #define NUMBER_OF_RELAYS sizeof(relays)/sizeof(int)
 
-char* MQTT_CLIENT_NAME = "downstairs/"; // location/devicenumber
+char* MQTT_CLIENT_NAME = "upstairs/"; // location/devicenumber
 char* MQTT_RELAY_TOPIC = "relay/"; // location/devicenumber/inputtype/
 
 void setup() {  
@@ -54,7 +54,7 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     return;
   }
   
-  if (strcmp(strtok(NULL, "/"), "downstairs") != 0){
+  if (strcmp(strtok(NULL, "/"), "upstairs") != 0){ // TODO config
     return;
   }
 
@@ -140,6 +140,6 @@ void reconnect() {
     
     Serial.println("connection established");
 
-    mqttClient.subscribe("cmnd/relay/downstairs/#");
+    mqttClient.subscribe("cmnd/relay/upstairs/#");
   }
 }
