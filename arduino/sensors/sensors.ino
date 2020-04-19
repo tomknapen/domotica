@@ -163,10 +163,6 @@ void setupMqtt(){
 }
 
 void ensureMqttConnectionActive(){
-//  if ( WiFi.status() != WL_CONNECTED){
-//    connectToWifi();
-//  }
-    
   while (!mqttClient.connected()){
     if ( WiFi.status() != WL_CONNECTED || mqttClient.state() == -2){
       connectToWifi();
