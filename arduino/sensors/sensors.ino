@@ -12,7 +12,7 @@
   SoftwareSerial Serial3(15, 14); // RX, TX
 #endif
 
-#include "downstairs_2.h"
+#include "downstairs_1.h"
 
 char* MQTT_BUTTON_TOPIC = "button/";
 char* MQTT_LED_TOPIC = "led/";
@@ -72,7 +72,7 @@ void setupLeds(){
 
   Serial.print("Initialized ");
   Serial.print(NUMBER_OF_LEDS);
-    if (NUMBER_OF_LEDS == 1){
+  if (NUMBER_OF_LEDS == 1){
     Serial.println(" led");
   }
   else {
@@ -149,6 +149,7 @@ void connectToWifi(){
   while ( WiFi.status() != WL_CONNECTED) {
     if (attempts == 10) {
       connectToWifi();
+      return;
     }
     Serial.println("attempting to connect to wifi");
     delay(1000); // wait for connection
@@ -171,26 +172,33 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
   Serial.print("received message on topic ");
   Serial.println(topic);
 
+  processLedTopic(topic, payload, length);
+}
+
+void processLedTopic(char* topic, byte* payload, unsigned int length){
   String topicString = String(topic);
+ 
+  if (!topicString.startsWith(getLedTopic())){
+    return;
+  }
 
-  char* ledTopic = getLedTopic();
-
-  Serial.println(ledTopic);
+  for (int i = 0; i < NUMBER_OF_LEDS; i++){
+    char pinBuffer[3];
+    int ledPin = ledPins[i];
+    sprintf(pinBuffer, "/%u", ledPin);
   
-  char* test = topicString.startsWith(ledTopic);
-  if (test){
-    Serial.print("Processing led brightness change: ");
-    Serial.println(test);
-    
-    int pin = 2; // TODO get from topic
+    if (!topicString.endsWith(pinBuffer)){
+      continue;
+    }
+  
     int brightness = atoi(getPayloadMsg(payload, length));
 
     Serial.print("Setting brightness of pin ");
-    Serial.print(pin);
+    Serial.print(ledPin);
     Serial.print(" to ");
     Serial.println(brightness);
 
-    analogWrite(pin, brightness);
+    analogWrite(ledPin, brightness);
   }
 }
 
@@ -226,7 +234,7 @@ void ensureMqttConnectionActive(){
 }
 
 void subscribeLeds(){  
-  char topicBuffer[50];
+  char topicBuffer[31];
   
   sprintf(topicBuffer, "%s#", getLedTopic());
 
@@ -240,8 +248,6 @@ char * getLedTopic(){
   static char topicBuffer[30];
   
   sprintf(topicBuffer, "cmnd/%s%s", MQTT_LED_TOPIC, MQTT_CLIENT_NAME);
-
-  Serial.println(topicBuffer);
 
   return topicBuffer;
 }
