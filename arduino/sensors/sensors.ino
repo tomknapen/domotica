@@ -15,6 +15,7 @@
 #include "downstairs_2.h"
 
 char* MQTT_BUTTON_TOPIC = "button/";
+char* MQTT_LED_TOPIC = "led/";
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -54,7 +55,12 @@ void setupButtons(){
 
   Serial.print("Initialized ");
   Serial.print(NUMBER_OF_BUTTONS);
-  Serial.println(" buttons");
+  if (NUMBER_OF_BUTTONS == 1){
+    Serial.println(" button");
+  }
+  else {
+    Serial.println(" buttons");
+  }
 }
 
 void setupLeds(){
@@ -66,7 +72,12 @@ void setupLeds(){
 
   Serial.print("Initialized ");
   Serial.print(NUMBER_OF_LEDS);
-  Serial.println(" leds");
+    if (NUMBER_OF_LEDS == 1){
+    Serial.println(" led");
+  }
+  else {
+    Serial.println(" leds");
+  }
 }
 
 void processButtons(){
@@ -133,19 +144,59 @@ void connectToWifi(){
     Serial.println("communication with WiFi module not established. Resetting...");
     resetFunc(); 
   }
-  
+
+  int attempts = 0;
   while ( WiFi.status() != WL_CONNECTED) {
+    if (attempts == 10) {
+      connectToWifi();
+    }
     Serial.println("attempting to connect to wifi");
     delay(1000); // wait for connection
-  }
 
-  Serial.println("connected to wifi");
+    attempts += 1;
+  }
+  
+  Serial.print("Connected to wifi, ip address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void setupMqtt(){
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+  mqttClient.setCallback(onMqttMessage);
 
   Serial.println("initialized MQTT client");
+}
+
+void onMqttMessage(char* topic, byte* payload, unsigned int length) {
+  Serial.print("received message on topic ");
+  Serial.println(topic);
+
+  String topicString = String(topic);
+
+  char* ledTopic = getLedTopic();
+
+  Serial.println(ledTopic);
+  
+  char* test = topicString.startsWith(ledTopic);
+  if (test){
+    Serial.print("Processing led brightness change: ");
+    Serial.println(test);
+    
+    int pin = 2; // TODO get from topic
+    int brightness = atoi(getPayloadMsg(payload, length));
+
+    Serial.print("Setting brightness of pin ");
+    Serial.print(pin);
+    Serial.print(" to ");
+    Serial.println(brightness);
+
+    analogWrite(pin, brightness);
+  }
+}
+
+char* getPayloadMsg(byte* payload, unsigned int length){
+  payload[length] = '\0';
+  return (char*) payload;
 }
 
 void ensureMqttConnectionActive(){
@@ -161,13 +212,36 @@ void ensureMqttConnectionActive(){
       Serial.print(mqttClient.state());
       Serial.println(", trying again in 5 seconds");
 
-      delay(5000);
+      delay(1000);
 
       continue;
     }
 
     if (mqttClient.connected()){
       Serial.println("connection established");
+
+      subscribeLeds();
     }
   }
+}
+
+void subscribeLeds(){  
+  char topicBuffer[50];
+  
+  sprintf(topicBuffer, "%s#", getLedTopic());
+
+  Serial.print("Subscribing to ");
+  Serial.println(topicBuffer);
+  
+  mqttClient.subscribe(topicBuffer);
+}
+
+char * getLedTopic(){
+  static char topicBuffer[30];
+  
+  sprintf(topicBuffer, "cmnd/%s%s", MQTT_LED_TOPIC, MQTT_CLIENT_NAME);
+
+  Serial.println(topicBuffer);
+
+  return topicBuffer;
 }
